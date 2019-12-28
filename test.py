@@ -12,14 +12,15 @@ g = Game(5,3,100000)
 #print(g.get_utility(-5,-5))
 
 a= time.time()
-p1,p2 = g.train()
+g.train()
+training_result = g.history
 b = time.time()
 
 
 #p2.action_count.sum()
 
-plt.scatter([i for i in range(1,g.nr_actions+1)],p2.action_count)
-plt.scatter([i for i in range(1,g.nr_actions+1)],p1.action_count)
+#plt.scatter([i for i in range(1,g.nr_actions+1)],p2.action_count)
+#plt.scatter([i for i in range(1,g.nr_actions+1)],p1.action_count)
 
-plt.hist(p2.last_regret)
-plt.hist(p1.last_regret)
+#plt.hist(p2.last_regret)
+#plt.hist(p1.last_regret)

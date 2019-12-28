@@ -1,17 +1,19 @@
 import numpy as np
+import pandas as pd
 from auxiliary import enumerate_actions
 
 
 class Game:    
     
-    def __init__(self,S,N,nr_steps):
+    def __init__(self,S,N,nr_steps,multiple):
         assert S > N
         self.actions    = enumerate_actions(S,N)
         self.nr_actions = len(self.actions)
         self.utilities = self.precompute_utilities()
         self.nr_steps = nr_steps
-        self.history = []
-
+        self.multiple = multiple
+        self.history = None
+        
     
     def get_utility(self,action1_index, action2_index): 
         
@@ -38,26 +40,66 @@ class Game:
         p1 = Player(self.nr_actions)
         p2 = Player(self.nr_actions)
         
-        for i in range(self.nr_steps):
-            #if i% 10000 == 0:
-               # self.history.append([p1.last_regret,p2.last_regret])
-                #modify this to get a history
-            
+        history_regrets = []
+        history_prob    = []
+        history_actions = []
+        history_rewards = []
+        
+        
+        for i in range(0,self.nr_steps+1):                
+                
             action1_index = p1.choose_strategy()
             action2_index = p2.choose_strategy()
             
             utility1 = self.utilities[action1_index,action2_index]
             utility2 = self.utilities[action2_index,action1_index]
-            #check if the transpose (except diagonal) is minus the toher thing
             
             regret1 = self.utilities[:,action2_index] - utility1
             regret2 = self.utilities[:,action1_index] - utility2
             
             
             p1.update(regret1,action1_index,utility1)
-            p2.update(regret2,action2_index,utility2)     
-    
-        return [p1,p2]
+            p2.update(regret2,action2_index,utility2)    
+            
+            
+            ######  add the history  ####
+            if i% self.multiple == 0 and i > 1 :
+                
+                history_regrets.append(list(p1.last_regret)+['A',i])
+                history_regrets.append(list(p2.last_regret)+['B',i])
+
+                
+                #add regrets and probabilities, computing them from regrets
+                proportions_1 = np.array([i if i > 0 else 0 for i in p1.last_regret]) 
+                proportions_2 = np.array([i if i > 0 else 0 for i in p2.last_regret]) 
+                
+                history_prob.append(list(proportions_1 / proportions_1.sum())+['A',i])
+                history_prob.append(list(proportions_2 / proportions_2.sum())+['B',i])   
+                
+                #add action counts
+                history_actions.append(list(p1.action_count / i)+['A',i])
+                history_actions.append(list(p2.action_count / i)+['B',i])
+                
+                #add action rewards
+                r1 = p1.action_reward / p1.action_count
+                r1[p1.action_count == 0] = 0
+                
+                r2 = p2.action_reward / p2.action_count
+                r2[p2.action_count == 0] = 0
+                
+                
+                history_rewards.append(list(r1)+['A',i])
+                history_rewards.append(list(r2)+['B',i])
+
+        
+        #save a history of probabilities, action played counts and action rewards in a list
+        columns = [str(tuple(i)) for i in self.actions] + ['player','iteration'] 
+        df_regrets = pd.DataFrame(history_regrets    ,columns = columns)
+        df_prop    = pd.DataFrame(history_prob    ,columns = columns)
+        df_count   = pd.DataFrame(history_actions ,columns = columns)
+        df_reward  = pd.DataFrame(history_rewards ,columns = columns)
+        
+        self.history = [df_regrets,df_prop,df_count,df_reward]
 
 class Player:
     

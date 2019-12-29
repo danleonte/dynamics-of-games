@@ -104,16 +104,23 @@ class Game:
 class Player:
     
     def __init__(self, nr_actions):
-        self.last_regret   = [1/nr_actions] * nr_actions
+        self.last_regret   = [0] * nr_actions
         self.action_count  = np.zeros(nr_actions)
         self.action_reward = np.zeros(nr_actions)
+        self.nr_actions = nr_actions
         
         
     def choose_strategy(self):
         proportions = np.array([i if i > 0 else 0 for i in self.last_regret])
-        proportions = proportions / proportions.sum()
+        if proportions.sum() > 0:
+            proportions = proportions / proportions.sum()
+        elif proportions.sum() == 0:
+            proportions = [1/self.nr_actions] * self.nr_actions
+
         strategy_index = np.argmax(np.random.multinomial(1,proportions) > 0)
-        return  strategy_index  
+        return  strategy_index 
+        
+
 
     def update(self,regret,action_index,reward):
         self.last_regret  += regret

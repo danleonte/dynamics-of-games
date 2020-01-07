@@ -14,3 +14,10 @@ def enumerate_actions(n,k):
     helper([],n,k)
                 
     return np.array(result)
+
+def evec_with_eval1(A):
+    """ A is a stochastic matrix (np.array) which has a stationary distribution (left evector with evalue 1)
+    """
+    e_val,e_vec = np.linalg.eig(np.transpose(A))
+    index_eval_1 = np.argmin(np.abs(e_val-1))
+    return e_vec[:,index_eval_1]
